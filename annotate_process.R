@@ -88,6 +88,6 @@ for (i in 1:dim(dataloc)[1]) {
         mutate(attrib=paste0("Name=", subject.id, ";gene=", subject.id, ";per.identity=", per.identity, ";bit.score=", bit.score,";evalue=",evalue)) %>%
         select(seqname=query.id, source=source, feature=feature, start=q.start, end=q.end, score=bit.score, strand=strand, frame=frame, attribute=attrib)
     
-    write_tsv(ise.gff, file.path(outdir, paste0(samp, ".iseblast.gff")), col_names=F)
+    write_tsv(ise.gff, file.path(outdir, "annot", paste0(samp, ".iseblast.gff")), col_names=F)
     
 }
