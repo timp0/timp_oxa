@@ -58,7 +58,7 @@ for (i in 1:dim(dataloc)[1]) {
     
     card.res=read_tsv(file.path(workdir, paste0(samp, ".cardblast.tsv")), col_names=blast.cols) %>%
         mutate(aro=sapply(strsplit(subject.id, split="\\|"), function(x) {x[5]})) %>%
-        mutate(aro.idx=pmatch(aro, card.tab$Accession)) %>%
+        mutate(aro.idx=pmatch(aro, card.tab$Accession, duplicates.ok=TRUE)) %>%
         mutate(aro.name=card.tab$Name[aro.idx]) %>%
         mutate(aro.desc=card.tab$Description[aro.idx])   
     

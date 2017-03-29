@@ -37,7 +37,7 @@ if (FALSE) {
         }
     }
 }
-    
+
 
 ##Run SPAdes
 if (FALSE) {
@@ -56,13 +56,11 @@ if (FALSE) {
 
 ##Set spades location
 dataloc=dataloc %>%
-    mutate(illumina.spades=file.path(workdir, "spades", trish.id, "contig.fasta"))
+    mutate(illumina.spades=file.path(workdir, "spades", trish.id, "contigs.fasta"))
 
 ##Ran on AWS, but to run locally:
 if (FALSE) {
     
-    dataloc=dataloc %>%
-        mutate(illumina.spades=NA)
 
     for (i in 1:dim(dataloc)[1]) {
 

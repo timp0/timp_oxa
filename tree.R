@@ -1,9 +1,54 @@
 library(tidyverse)
+library(googlesheets)
 
-##Want to use gsheets directly, but right now doesn't work easily, skip for now
-#library(googlesheets)
-#options(httr_oob_default=T)
-#gs_auth(new_user=T)
+workdir="/atium/Data/Nanopore/Analysis/170104_reassemble/annot/"
+outdir="~/Dropbox/Data/Nanopore/170104_reassemble"
+
+refdir="/atium/Data/Reference/kpneumo"
+
+gs_auth(token = "~/googlesheets_token.rds")
+
+make.tree = function(workdir, outdir, label="nanocontigs", assembly="nanopore.canu", kpneumo.refs, parsnp.label="nano_parsnp", full.tree=F) {
+
+    ##Raw nanopore assembly tree
+    ##copy nanopore assemblies
+    contig.dir=file.path(workdir, label)
+    if (!dir.exists(contig.dir)) {
+        dir.create(contig.dir)
+    }
+    contig=dataloc %>%
+        rename_(afile=assembly) %>%
+        filter(!is.na(afile)) %>%
+        mutate(dest.file=file.path(contig.dir, paste0("isolate_", trish.id, ".fasta"))) %>%
+        select(afile, dest.file)
+    file.copy(contig$afile, contig$dest.file)       
+    
+    ##copy reference genome
+    if (full.tree) {
+        kpneumo.refs=kpneumo.refs %>%
+            filter(Strain!="NA") %>%
+            mutate(Strain=gsub(" ", "", Strain)) %>%
+            mutate(Strain=gsub("[[:punct:]]", "", Strain))
+        file.copy(kpneumo.refs$dest.name, file.path(contig.dir, paste0(kpneumo.refs$Strain, ".fasta.gz")))
+        system(paste0("gunzip -f ", file.path(contig.dir, "*.gz")))
+    } else {
+        ##Just HS11286 for now
+        file.copy(kpneumo.refs$dest.name[kpneumo.refs$Strain=="HS11286"&(!is.na(kpneumo.refs$Strain))], file.path(contig.dir, "HS11286.fasta.gz"))
+        ##Got to ungzip these for parsnp (obnoxiously)
+        system(paste0("gunzip -f ", file.path(contig.dir, "HS11286.fasta.gz")))
+    }
+    ##parsnp
+    system(paste0("~/Code/Harvest-Linux64-v1.1.2/parsnp -r ", file.path(contig.dir, "HS11286.fasta"), " -d ", contig.dir, " -p 10 -o ./", parsnp.label))
+    
+    ##Count snps
+    vcfloc=file.path(workdir,parsnp.label, "parsnp.vcf")  
+    system(paste0("~/Code/Harvest-Linux64-v1.1.2/harvesttools -i ", file.path(workdir, parsnp.label, "parsnp.ggr"), " -V ", vcfloc))
+    count.snps(vcfloc)
+    
+    ##copy tree file out 
+    system(paste0("cp -R ", file.path(workdir, parsnp.label), " ", file.path(outdir)))
+}
+
 
 count.snps = function(vcfloc) {
     ##Count snps in vcf file
@@ -22,25 +67,20 @@ count.snps = function(vcfloc) {
     write_csv(spread(comp, V2, val), paste0(vcfloc, ".csv"))
 }
 
-
-
-workdir="/atium/Data/Nanopore/Analysis/161223_kpneumo/trees"
-outdir="~/Dropbox/Data/Nanopore/161230_oxatree"
-
-refdir="/atium/Data/Reference/kpneumo"
-
 #ref.cols=c("assembly_accession", "bioproject", "biosample", "wgs_master", "refseq_category", "taxid", "species_taxid", "organism_name",
 #           "infraspecific_name", "isolate", "version_status", "assembly_level", "release_type", "genome_rep", "seq_rel_date", "asm_name",
 #           "submitter", "gbrs_paired_asm", "paired_asm_comp", "ftp_path", "excluded_from_refseq")
 
 #kpneumo.refs=read_tsv(file.path(outdir, "assembly_summary.txt"), comment="#")
 
+##All kpneumo refs
 kpneumo.refs=read_csv(file.path(outdir, "genomes_proks.csv")) %>%
     rename(org.name=`#Organism/Name`) %>%
     mutate(rootname=sapply(strsplit(`GenBank FTP`, split="/"), function(x) {x[length(x)]})) %>%
     mutate(source.name=paste0(`GenBank FTP`, "/", rootname, "_genomic.fna.gz")) %>%
     mutate(dest.name=file.path(refdir, paste0(rootname, "_genomic.fna.gz")))
 
+##Download 
 if (FALSE) {
 
     for (i in 1:dim(kpneumo.refs)[1]) {
@@ -52,85 +92,18 @@ if (FALSE) {
 
 setwd(workdir)
 
-##Load CSV with sample info
-
-dataloc=read_csv(file.path(outdir, "dataloc.csv"))
-
-##copy nanopore assemblies
-
-contig.dir=file.path(workdir, "nanocontigs")
-
-if (!dir.exists(contig.dir)) {
-    dir.create(contig.dir)
-}
-
-nano.contig=dataloc %>%
-    filter(Sequenced=="both") %>%
-    mutate(dest.file=file.path(contig.dir, paste0(trish.id, ".fasta"))) %>%
-    select(canu.assembly, dest.file)
-
-file.copy(nano.contig$canu.assembly, nano.contig$dest.file)       
-
-##copy reference genome
-
-##Just HS11286 for now
-
-file.copy(kpneumo.refs$dest.name[kpneumo.refs$Strain=="HS11286"&(!is.na(kpneumo.refs$Strain))], file.path(contig.dir, "HS11286.fasta.gz"))
-##Got to ungzip these for parsnp (obnoxiously)
-system(paste0("gunzip ", file.path(contig.dir, "HS11286.fasta.gz")))
-
-##parsnp
-
-system(paste0("~/Code/Harvest-Linux64-v1.1.2/parsnp -r ", file.path(contig.dir, "HS11286.fasta"), " -d ", contig.dir, " -p 10 -o ./Nanopore_parsnp"))
-
-##Count snps
-
-vcfloc=file.path(workdir, "Nanopore_parsnp", "parsnp.vcf")
-    
-system(paste0("~/Code/Harvest-Linux64-v1.1.2/harvesttools -i ", file.path(workdir, "Nanopore_parsnp", "parsnp.ggr"), " -V ", vcfloc))
-
-count.snps(vcfloc)
-
-##copy tree file out 
-
-system(paste0("cp -R ", file.path(workdir, "Nanopore_parsnp"), " ", file.path(outdir, "Nanopore_parsnp")))
-
-##copy illumina assemblies
-
-contig.dir=file.path(workdir, "illcontigs")
-
-if (!dir.exists(contig.dir)) {
-    dir.create(contig.dir)
-}
-
-ill.contig=dataloc %>%
-    mutate(dest.file=file.path(contig.dir, paste0(trish.id, ".fasta"))) %>%
-    select(spades.assembly, dest.file)
-
-file.copy(ill.contig$spades.assembly, ill.contig$dest.file)       
+fullsheet=gs_url("https://docs.google.com/spreadsheets/d/1_WT3RQSVGvR97-asIHtIy0WWg49rAFiWWQe9g8BWNiQ/edit?usp=sharing")
+dataloc=gs_read(fullsheet, ws="KPneumo0123")
 
 
-##copy reference genome
+##Raw nanopore assembly tree
 
-file.copy(kpneumo.refs$dest.name[kpneumo.refs$Strain=="HS11286"&(!is.na(kpneumo.refs$Strain))], file.path(contig.dir, "HS11286.fasta.gz"))
-##Got to ungzip these for parsnp (obnoxiously)
-system(paste0("gunzip ", file.path(contig.dir, "HS11286.fasta.gz")))
-
-##parsnp
-
-system(paste0("~/Code/Harvest-Linux64-v1.1.2/parsnp -r ", file.path(contig.dir, "HS11286.fasta"), " -d ", contig.dir, " -p 10 -o ./Illumina_parsnp"))
-
-##Count snps
-
-vcfloc=file.path(workdir, "Illumina_parsnp", "parsnp.vcf")
-    
-system(paste0("~/Code/Harvest-Linux64-v1.1.2/harvesttools -i ", file.path(workdir, "Illumina_parsnp", "parsnp.ggr"), " -V ", vcfloc))
-
-count.snps(vcfloc)
-
-##copy tree file out 
-
-system(paste0("cp -R ", file.path(workdir, "Illumina_parsnp"), " ", file.path(outdir, "Illumina_parsnp")))
+make.tree(workdir, outdir, label="nanocontigs", assembly="nanopore.canu", kpneumo.refs, parsnp.label="nano_parsnp")
+make.tree(workdir, outdir, label="piloncontigs", assembly="pilon", kpneumo.refs, parsnp.label="pilon_parsnp")
+make.tree(workdir, outdir, label="spadescontigs", assembly="illumina.spades", kpneumo.refs, parsnp.label="spades_parsnp")
 
 ##Next
 ##Generate massive tree with nanopore assemblies and all K. Pnemuo refs
+
+make.tree(workdir, outdir, label="pilonfull", assembly="pilon", kpneumo.refs, parsnp.label="pilon_full_parsnp", full.tree=T)
+
