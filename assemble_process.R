@@ -18,7 +18,9 @@ setwd(workdir)
 
 dataloc=dataloc %>%
     mutate(nanopore.fasta=ifelse(is.na(nanopore.raw), "NA", file.path(workdir, "nanopore.raw", paste0(trish.id, ".nanopore.2D.fasta"))))
- 
+
+
+
 if (FALSE) {   
     for (i in 1:dim(dataloc)[1]) {
     
@@ -37,6 +39,29 @@ if (FALSE) {
         }
     }
 }
+
+##Plot/aquire stats on nanopore fasta/q
+if (FALSE) {
+
+    library(Biostrings)
+
+    dataloc=dataloc %>%
+        mutate(nanopore.fasta=ifelse(is.na(nanopore.raw), "NA", file.path(workdir, "nanopore.raw", paste0(trish.id, ".nanopore.2D.fasta"))))
+
+    dataloc=dataloc %>%
+        mutate(nanopore.medlength=0) %>%
+        mutate(nanopore.yield=0)
+    
+    
+    for (i in 1:dim(dataloc)[1]) {
+        if (nanopore.fasta != "NA") {
+            fa=readDNAStringSet(dataloc$nanopore.fasta[i])
+            dataloc$nanopore.medlength=median(width(fa))
+            dataloc$nanopore.yield=sum(as.numeric(width(fa)))/1e6
+        }
+
+}
+
 
 
 ##Run SPAdes
