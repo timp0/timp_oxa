@@ -2,12 +2,13 @@ library(tidyverse)
 library(googlesheets)
 
 workdir="/atium/Data/Nanopore/Analysis/170104_reassemble/annot/"
-outdir="~/Dropbox/Data/Nanopore/170104_reassemble"
+workdir2="/atium/Data/Nanopore/Analysis/170330_oxa/annot/"
+outdir="~/Dropbox/Data/Nanopore/170402_reassemble"
 
 gs_auth(token = "~/googlesheets_token.rds")
 
 fullsheet=gs_url("https://docs.google.com/spreadsheets/d/1_WT3RQSVGvR97-asIHtIy0WWg49rAFiWWQe9g8BWNiQ/edit?usp=sharing")
-dataloc=gs_read(fullsheet, ws="KPneumo0123") %>%
+dataloc=gs_read(fullsheet, ws="KPneumo0402") %>%
     filter(Sequenced=="both")
 
 blast.cols=c("query.id", "subject.id", "per.identity", "align.len", "mismatch", "gap.opens", "q.start", "q.end", "s.start", "s.end", "evalue", "bit.score")
@@ -22,7 +23,7 @@ card.tab=read_csv(file.path(card.dir, "aro.csv")) %>%
 
 ##Fix to make it one hit only for card blast?
 
-setwd(workdir)
+setwd(workdir2)
 
 ##Load CSV with sample info
 
@@ -31,15 +32,15 @@ for (i in 1:dim(dataloc)[1]) {
     samp=dataloc$trish.id[i]
     
     ##Run Prokka
-    system(paste0("~/Code/prokka/bin/prokka --outdir ", workdir, "/", samp, "_genus --genus Klebsiella --usegenus --prefix ", samp, "_genus ", dataloc$pilon[i]))
+    system(paste0("~/Code/prokka/bin/prokka --outdir ", workdir2, "/", samp, "_genus --genus Klebsiella --usegenus --prefix ", samp, "_genus ", dataloc$pilon2[i]))
     
-    file.copy(file.path(workdir, paste0(samp, "_genus"), paste0(samp, "_genus.gff")), file.path(outdir, "annot", paste0(samp, "_genus.gff")))
+    file.copy(file.path(workdir2, paste0(samp, "_genus"), paste0(samp, "_genus.gff")), file.path(outdir, "annot", paste0(samp, "_genus.gff")))
     
     ##Run RGI (CARD)
-    system(paste0("python ~/Code/rgi_card/rgi.py -t contig -i ", dataloc$pilon[i], " -n 8 -o ", samp, ".rgicard"))
+    system(paste0("python ~/Code/rgi_card/rgi.py -t contig -i ", dataloc$pilon2[i], " -n 8 -o ", samp, ".rgicard"))
     system(paste0("python ~/Code/rgi_card/convertJsonToTSV.py -i ", samp, ".rgicard.json -o ", samp, ".rgicard"))
     
-    rgi=read_tsv(file.path(workdir, paste0(samp, ".rgicard.txt"))) %>%
+    rgi=read_tsv(file.path(workdir2, paste0(samp, ".rgicard.txt"))) %>%
         mutate(clabel=gsub('_[0-9]*$', '', ORF_ID)) %>%
         mutate(attrib=paste0("Name=",ARO_name, ";gene=", ARO_name, ";ARO_category=", AR0_category, ";cutoff=", CUT_OFF))
     
@@ -53,10 +54,10 @@ for (i in 1:dim(dataloc)[1]) {
     
     
     ##Run CARD Blast
-    system(paste0("blastn -db /atium/Data/Reference/CARD/CARDblast -query ", dataloc$pilon[i],
-                  " -evalue 1e-50 -outfmt 6 -best_hit_overhang .1 -best_hit_score_edge 1e-5 >", workdir, "/", samp, ".cardblast.tsv"))
+    system(paste0("blastn -db /atium/Data/Reference/CARD/CARDblast -query ", dataloc$pilon2[i],
+                  " -evalue 1e-50 -outfmt 6 -best_hit_overhang .1 -best_hit_score_edge 1e-5 >", workdir2, "/", samp, ".cardblast.tsv"))
     
-    card.res=read_tsv(file.path(workdir, paste0(samp, ".cardblast.tsv")), col_names=blast.cols) %>%
+    card.res=read_tsv(file.path(workdir2, paste0(samp, ".cardblast.tsv")), col_names=blast.cols) %>%
         mutate(aro=sapply(strsplit(subject.id, split="\\|"), function(x) {x[5]})) %>%
         mutate(aro.idx=pmatch(aro, card.tab$Accession, duplicates.ok=TRUE)) %>%
         mutate(aro.name=card.tab$Name[aro.idx]) %>%
@@ -74,9 +75,9 @@ for (i in 1:dim(dataloc)[1]) {
     
     ##Look for specific gene mutations
     mutgenedb="/atium/Data/Nanopore/Analysis/161223_kpneumo/genedb/mutdbase"
-    system(paste0("blastn -db ", mutgenedb, " -query ", dataloc$pilon[i], " -outfmt 6 >", workdir, samp, ".mutblast.tsv"))
+    system(paste0("blastn -db ", mutgenedb, " -query ", dataloc$pilon2[i], " -outfmt 6 >", workdir2, samp, ".mutblast.tsv"))
     
-    mut.res=read_tsv(file.path(workdir, paste0(samp, ".mutblast.tsv")), col_names=blast.cols)
+    mut.res=read_tsv(file.path(workdir2, paste0(samp, ".mutblast.tsv")), col_names=blast.cols)
     
     mut.gff=mut.res %>%
         mutate(source="mutblast", feature="CDS", frame="0") %>%
@@ -89,9 +90,9 @@ for (i in 1:dim(dataloc)[1]) {
     
     ##look for specific is recog sequences
     isedb="/atium/Data/Nanopore/Analysis/161223_kpneumo/genedb/isecp1blast"
-    system(paste0("blastn -task blastn-short -db ", isedb, " -query ", dataloc$pilon[i], " -outfmt 6 >", workdir, samp, ".iseblast.tsv"))
+    system(paste0("blastn -task blastn-short -db ", isedb, " -query ", dataloc$pilon2[i], " -outfmt 6 >", workdir2, samp, ".iseblast.tsv"))
     
-    ise.res=read_tsv(file.path(workdir, paste0(samp, ".iseblast.tsv")), col_names=blast.cols)
+    ise.res=read_tsv(file.path(workdir2, paste0(samp, ".iseblast.tsv")), col_names=blast.cols)
     
     ise.gff=ise.res %>%
         mutate(source="iseblast", feature="Mobile_element", frame="0") %>%

@@ -2,6 +2,7 @@ library(tidyverse)
 library(googlesheets)
 
 workdir="/atium/Data/Nanopore/Analysis/170104_reassemble"
+workdir2="/atium/Data/Nanopore/Analysis/170330_oxa"
 outdir="~/Dropbox/Data/Nanopore/170104_reassemble"
 
 gs_auth(token = "~/googlesheets_token.rds")
@@ -18,7 +19,6 @@ setwd(workdir)
 
 dataloc=dataloc %>%
     mutate(nanopore.fasta=ifelse(is.na(nanopore.raw), "NA", file.path(workdir, "nanopore.raw", paste0(trish.id, ".nanopore.2D.fasta"))))
-
 
 
 if (FALSE) {   
@@ -58,18 +58,17 @@ if (FALSE) {
             fa=readDNAStringSet(dataloc$nanopore.fasta[i])
             dataloc$nanopore.medlength=median(width(fa))
             dataloc$nanopore.yield=sum(as.numeric(width(fa)))/1e6
-        }
-
+        }     
+    }
 }
-
 
 
 ##Run SPAdes
 if (FALSE) {
     ##copy illumina data to temp dir for transfer up to AWS
-
+    
     for (i in 1:dim(dataloc)[1]) {
-
+        
         samp=dataloc$trish.id[i]
         
         file.copy(dataloc$illumina.r1[i], file.path(workdir, "illumina.raw", paste0(samp, "_R1.fastq.gz")))
@@ -86,17 +85,17 @@ dataloc=dataloc %>%
 ##Ran on AWS, but to run locally:
 if (FALSE) {
     
-
+    
     for (i in 1:dim(dataloc)[1]) {
-
+        
         if (!is.na(dataloc$illumina.r1[i])) {
-
+            
             samp=dataloc$trish.id[i]
-
+            
             system(paste0("~/Code/SPAdes-3.9.1/bin/spades.py -1 ", dataloc$illumina.r1[i], " -2 ", dataloc$illumina.r2[i],
                           " -o ", samp, "/spades"))
-
-
+            
+            
             dataloc$illumina.spades[i]=file.path(workdir, paste0(samp, ".spades"))
             
         }
@@ -107,10 +106,17 @@ if (FALSE) {
 
 ##canu
 ##set canu directories
+
+##2nd canu run is 
+
+    
 dataloc=dataloc %>%
     mutate(nanopore.canu=ifelse(is.na(nanopore.raw), "NA", file.path(workdir, "canu", paste0(trish.id, ".nanopore"),
-                                                                     paste0(trish.id, ".nanopore.contigs.fasta"))))
+                                                                     paste0(trish.id, ".nanopore.contigs.fasta")))) %>%
+    mutate(nanopore.canu2=ifelse(is.na(nanopore.raw), "NA", file.path(workdir2, paste0(trish.id, ".nanopore.contigs.fasta"))))
 
+
+    
 ##Run on aws instead
 if (FALSE) {
 
@@ -128,11 +134,13 @@ if (FALSE) {
 
 ##make index for alignment to canu contigs
 dir.create(file.path(workdir, "btidx"))
+dir.create(file.path(workdir2, "btidx"))
 
 dataloc=dataloc %>%
-    mutate(canu.btidx=ifelse(is.na(nanopore.raw), "NA", file.path(workdir, "btidx", paste0(trish.id, ".nanopore"))))
+    mutate(canu.btidx=ifelse(is.na(nanopore.raw), "NA", file.path(workdir, "btidx", paste0(trish.id, ".nanopore")))) %>%
+    mutate(canu2.btidx=ifelse(is.na(nanopore.raw), "NA", file.path(workdir2, "btidx", paste0(trish.id, ".nanopore"))))
 
-if (TRUE) {
+if (FALSE) {
     for (i in 1:dim(dataloc)[1]) {
 
         if (!is.na(dataloc$nanopore.raw[i])) {
@@ -144,11 +152,27 @@ if (TRUE) {
     }   
 }
 
+if (TRUE) {
+    for (i in 1:dim(dataloc)[1]) {
+
+        if (!is.na(dataloc$nanopore.raw[i])) {
+            ##Index canu with bowtie2
+            
+            system(paste0("bowtie2-build ", dataloc$nanopore.canu2[i], " ", dataloc$canu2.btidx[i]))
+
+        }
+    }   
+}
+
+
+
 ##align illumina to nanopore contigs
 dir.create(file.path(workdir, "btbam"))
+dir.create(file.path(workdir2, "btbam"))
 
 dataloc=dataloc %>%
-    mutate(canu.ill.align=ifelse(is.na(nanopore.raw), "NA", file.path(workdir, "btbam", paste0(trish.id, ".sorted.bam"))))
+    mutate(canu.ill.align=ifelse(is.na(nanopore.raw), "NA", file.path(workdir, "btbam", paste0(trish.id, ".sorted.bam")))) %>%
+    mutate(canu2.ill.align=ifelse(is.na(nanopore.raw), "NA", file.path(workdir2, "btbam", paste0(trish.id, ".sorted.bam")))) 
 
 
 if (TRUE) {
@@ -164,15 +188,32 @@ if (TRUE) {
     }
 }
 
+if (TRUE) {
+
+    for (i in 1:dim(dataloc)[1]) {
+        if (!is.na(dataloc$nanopore.raw[i])) {
+            ##Align ill to canu bowtie2
+            system(paste0("bowtie2 -p 15 -x ", dataloc$canu2.btidx[i], " -1 ", dataloc$illumina.r1[i], " -2 ",
+                          dataloc$illumina.r2[i], " | samtools view -bS - | samtools sort - -o ", dataloc$canu2.ill.align[i]))
+            system(paste0("samtools index ", dataloc$canu2.ill.align[i]))
+
+        }
+    }
+}
+
+
 
 ##Use pilon to fix nanopore contigs with alginments
 dir.create(file.path(workdir, "pilon"))
+dir.create(file.path(workdir2, "pilon"))
 
 dataloc=dataloc %>%
-    mutate(pilon=ifelse(is.na(nanopore.raw), "NA", file.path(workdir, "pilon", paste0(trish.id, ".pilon.fasta"))))
+    mutate(pilon=ifelse(is.na(nanopore.raw), "NA", file.path(workdir, "pilon", paste0(trish.id, ".pilon.fasta")))) %>%
+    mutate(pilon2=ifelse(is.na(nanopore.raw), "NA", file.path(workdir2, "pilon", paste0(trish.id, ".pilon.fasta"))))
 
 ##run pilon
 
+setwd(workdir)
 if (TRUE) {
     for (i in 1:dim(dataloc)[1]) {
         if (!is.na(dataloc$nanopore.raw[i])) {
@@ -183,5 +224,18 @@ if (TRUE) {
     }
 }
 
+setwd(workdir2)
+if (TRUE) {
+    for (i in 1:dim(dataloc)[1]) {
+        if (!is.na(dataloc$nanopore.raw[i])) {
+            system(paste0("java -Xmx30G -jar ~/Code/pilon/pilon-1.22.jar --genome ", dataloc$nanopore.canu2[i],
+                          " --frags ", dataloc$canu2.ill.align[i], " --output ", dataloc$trish.id[i], ".pilon --outdir pilon"))
+
+        }
+    }
+}
+
+
+
 fullsheet=gs_url("https://docs.google.com/spreadsheets/d/1_WT3RQSVGvR97-asIHtIy0WWg49rAFiWWQe9g8BWNiQ/edit?usp=sharing")
-gs_ws_new(fullsheet, ws_title="KPneumo0123", input=dataloc)
+gs_ws_new(fullsheet, ws_title="KPneumo0402", input=dataloc)
