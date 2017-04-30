@@ -1,8 +1,8 @@
 library(tidyverse)
 library(googlesheets)
 
-workdir="/atium/Data/Nanopore/Analysis/170104_reassemble/annot/"
-outdir="~/Dropbox/Data/Nanopore/170104_reassemble"
+workdir="/atium/Data/Nanopore/Analysis/170330_oxa/annot/"
+outdir="~/Dropbox/Data/Nanopore/170402_reassemble"
 
 refdir="/atium/Data/Reference/kpneumo"
 
@@ -74,7 +74,7 @@ count.snps = function(vcfloc) {
 #kpneumo.refs=read_tsv(file.path(outdir, "assembly_summary.txt"), comment="#")
 
 ##All kpneumo refs
-kpneumo.refs=read_csv(file.path(outdir, "genomes_proks.csv")) %>%
+kpneumo.refs=read_csv(file.path("~/Dropbox/Data/Nanopore/170104_reassemble", "genomes_proks.csv")) %>%
     rename(org.name=`#Organism/Name`) %>%
     mutate(rootname=sapply(strsplit(`GenBank FTP`, split="/"), function(x) {x[length(x)]})) %>%
     mutate(source.name=paste0(`GenBank FTP`, "/", rootname, "_genomic.fna.gz")) %>%
@@ -93,13 +93,13 @@ if (FALSE) {
 setwd(workdir)
 
 fullsheet=gs_url("https://docs.google.com/spreadsheets/d/1_WT3RQSVGvR97-asIHtIy0WWg49rAFiWWQe9g8BWNiQ/edit?usp=sharing")
-dataloc=gs_read(fullsheet, ws="KPneumo0123")
+dataloc=gs_read(fullsheet, ws="KPneumo0402")
 
 
 ##Raw nanopore assembly tree
 
-make.tree(workdir, outdir, label="nanocontigs", assembly="nanopore.canu", kpneumo.refs, parsnp.label="nano_parsnp")
-make.tree(workdir, outdir, label="piloncontigs", assembly="pilon", kpneumo.refs, parsnp.label="pilon_parsnp")
+make.tree(workdir, outdir, label="nanocontigs", assembly="nanopore.canu2", kpneumo.refs, parsnp.label="nano_parsnp")
+make.tree(workdir, outdir, label="piloncontigs", assembly="pilon2", kpneumo.refs, parsnp.label="pilon_parsnp")
 make.tree(workdir, outdir, label="spadescontigs", assembly="illumina.spades", kpneumo.refs, parsnp.label="spades_parsnp")
 
 ##Next
