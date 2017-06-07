@@ -98,12 +98,20 @@ dataloc=gs_read(fullsheet, ws="KPneumo0402")
 
 ##Raw nanopore assembly tree
 
-make.tree(workdir, outdir, label="nanocontigs", assembly="nanopore.canu2", kpneumo.refs, parsnp.label="nano_parsnp")
-make.tree(workdir, outdir, label="piloncontigs", assembly="pilon2", kpneumo.refs, parsnp.label="pilon_parsnp")
-make.tree(workdir, outdir, label="spadescontigs", assembly="illumina.spades", kpneumo.refs, parsnp.label="spades_parsnp")
+#make.tree(workdir, outdir, label="nanocontigs", assembly="nanopore.canu2", kpneumo.refs, parsnp.label="nano_parsnp")
+#make.tree(workdir, outdir, label="piloncontigs", assembly="pilon2", kpneumo.refs, parsnp.label="pilon_parsnp")
+#make.tree(workdir, outdir, label="spadescontigs", assembly="illumina.spades", kpneumo.refs, parsnp.label="spades_parsnp")
 
 ##Next
 ##Generate massive tree with nanopore assemblies and all K. Pnemuo refs
 
 make.tree(workdir, outdir, label="pilonfull", assembly="pilon", kpneumo.refs, parsnp.label="pilon_full_parsnp", full.tree=T)
+
+
+kpneumo.comp=filter(kpneumo.refs, Level=="Complete Genome")
+
+make.tree(workdir, outdir, label="piloncomplete", assembly="pilon", kpneumo.comp, parsnp.label="pilon_complete_parsnp", full.tree=T)
+
+make.tree(workdir, outdir, label="spadescomplete", assembly="illumina.spades", kpneumo.comp, parsnp.label="spades_complete_parsnp", full.tree=T)
+
 

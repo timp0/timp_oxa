@@ -101,5 +101,12 @@ for (i in 1:dim(dataloc)[1]) {
         select(seqname=query.id, source=source, feature=feature, start=q.start, end=q.end, score=bit.score, strand=strand, frame=frame, attribute=attrib)
     
     write_tsv(ise.gff, file.path(outdir, "annot", paste0(samp, ".iseblast.gff")), col_names=F)
+
+
+    ##MLST typing
+    system(paste0("~/Code/mlst/bin/mlst ", dataloc$pilon2[i], " >", workdir2, samp, ".mlst.tsv"))
     
 }
+
+
+
