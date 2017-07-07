@@ -1,8 +1,8 @@
 library(tidyverse)
 library(googlesheets)
 
-workdir="/atium/Data/Nanopore/Analysis/170330_oxa/annot/"
-outdir="~/Dropbox/Data/Nanopore/170402_reassemble"
+workdir="/atium/Data/Nanopore/Analysis/170516_oxapilon/annot/"
+outdir="~/Dropbox/Data/Nanopore/170515_oxa"
 
 refdir="/atium/Data/Reference/kpneumo"
 
@@ -59,8 +59,9 @@ count.snps = function(vcfloc) {
 
     ##Interesting names are names(vcfs)[10:length(vcfs)]
 
+    ##Sometimes columns are 2s
     comp=as_data_frame(t(combn(names(vcfs[10:length(vcfs)]),2))) %>%
-        mutate(val=colSums(abs(vcfs[V1]-vcfs[V2])))
+        mutate(val=colSums((vcfs[V1]-vcfs[V2]) != 0 ))
 
     comp=rbind(comp, data_frame(V1=comp$V2, V2=comp$V1, val=comp$val))
 
@@ -93,25 +94,52 @@ if (FALSE) {
 setwd(workdir)
 
 fullsheet=gs_url("https://docs.google.com/spreadsheets/d/1_WT3RQSVGvR97-asIHtIy0WWg49rAFiWWQe9g8BWNiQ/edit?usp=sharing")
-dataloc=gs_read(fullsheet, ws="KPneumo0402")
+dataloc=gs_read(fullsheet, ws="KPneumo0518")
 
 
 ##Raw nanopore assembly tree
 
 #make.tree(workdir, outdir, label="nanocontigs", assembly="nanopore.canu2", kpneumo.refs, parsnp.label="nano_parsnp")
 #make.tree(workdir, outdir, label="piloncontigs", assembly="pilon2", kpneumo.refs, parsnp.label="pilon_parsnp")
-#make.tree(workdir, outdir, label="spadescontigs", assembly="illumina.spades", kpneumo.refs, parsnp.label="spades_parsnp")
 
 ##Next
+
+##ok - make tables for illumina only, nanopore raw, nanopore pilonx1, nanopore pilon looped
+make.tree(workdir, outdir, label="spadescontigs", assembly="illumina.spades", kpneumo.refs, parsnp.label="spades_parsnp")
+make.tree(workdir, outdir, label="nanoporeraw", assembly="nanopore.canu2", kpneumo.refs, parsnp.label="nanopore_raw_parsnp")
+make.tree(workdir, outdir, label="nanoporeonepilon", assembly="pilon2", kpneumo.refs, parsnp.label="pilon_one_parsnp")
+make.tree(workdir, outdir, label="pilonloop", assembly="pilon.cor", kpneumo.refs, parsnp.label="pilon_loop_parsnp")
+
 ##Generate massive tree with nanopore assemblies and all K. Pnemuo refs
-
-make.tree(workdir, outdir, label="pilonfull", assembly="pilon", kpneumo.refs, parsnp.label="pilon_full_parsnp", full.tree=T)
-
-
 kpneumo.comp=filter(kpneumo.refs, Level=="Complete Genome")
 
-make.tree(workdir, outdir, label="piloncomplete", assembly="pilon", kpneumo.comp, parsnp.label="pilon_complete_parsnp", full.tree=T)
+make.tree(workdir, outdir, label="pilonloopcomplete", assembly="pilon.cor", kpneumo.comp,
+          parsnp.label="pilon_loop_complete_parsnp", full.tree=T)
 
-make.tree(workdir, outdir, label="spadescomplete", assembly="illumina.spades", kpneumo.comp, parsnp.label="spades_complete_parsnp", full.tree=T)
+make.tree(workdir, outdir, label="spadescomplete", assembly="illumina.spades", kpneumo.comp,
+          parsnp.label="spades_complete_parsnp", full.tree=T)
+
+
+
+##Ok - looking just at location of SNPs between strains in pilon loop
+
+pilonloopvcf=read_tsv(file.path(outdir, "pilon_loop_parsnp", "parsnp.vcf"), comment="##")
+##Tree branches are 1,2,6,7 and 9,8,4,12
+HMV=paste0("isolate_", c(9,8,4,12), ".fasta")
+XDR=paste0("isolate_", c(1,2,6,7), ".fasta")
+
+HMV.snp=pilonloopvcf %>%
+    select(1:9,one_of(HMV)) %>%
+    mutate(diffy=rowSums(cbind((.[10]-.[11])!=0, (.[10]-.[12])!=0, (.[10]-.[13])!=0))) %>%
+    filter(diffy>0)
+
+XDR.snp=pilonloopvcf %>%
+    select(1:9,one_of(XDR)) %>%
+    mutate(diffy=rowSums(cbind((.[10]-.[11])!=0, (.[10]-.[12])!=0, (.[10]-.[13])!=0))) %>%
+    filter(diffy>0)
+
+
+
+
 
 

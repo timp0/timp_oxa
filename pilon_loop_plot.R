@@ -16,6 +16,6 @@ meta=meta %>%
 
 pdf(file.path(plotdir, "pilons.pdf"))
 
-ggplot(meta, aes(x=round, y=num, group=factor(samp), color=factor(samp)))+theme_classic()+geom_line()+scale_y_log10()
+print(ggplot(meta, aes(x=round, y=num, group=factor(samp), color=factor(samp)))+theme_classic()+geom_line()+scale_y_log10())
 
 dev.off()

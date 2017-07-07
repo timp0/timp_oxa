@@ -87,8 +87,15 @@ for (round in 1:10){
         }
     }
 }
- 
-    
+
+
+for (i in 1:dim(dataloc)[1]) {
+
+    if (!is.na(dataloc$pilon.cor[i])) {
+        system(paste0("sed -i -e 's/_pilon//g' ", dataloc$pilon.cor[i]))
+    }
+}
+
 fullsheet=gs_url("https://docs.google.com/spreadsheets/d/1_WT3RQSVGvR97-asIHtIy0WWg49rAFiWWQe9g8BWNiQ/edit?usp=sharing")
 gs_ws_new(fullsheet, ws_title="KPneumo0518", input=dataloc)
     
