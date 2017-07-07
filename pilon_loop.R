@@ -21,6 +21,8 @@ dataloc=dataloc %>%
     mutate(pilon.round=0)
 
 
+##Just run one do this:
+##dataloc=filter(dataloc, trish.id==12)
 
 
 sttime=proc.time()
@@ -31,14 +33,14 @@ for (round in 1:10){
         mutate(pilon.btidx=ifelse(is.na(nanopore.raw), "NA", file.path(workdir, "btidx", paste0(trish.id, ".", round, ".nanopore"))))
 
     for (i in 1:dim(dataloc)[1]) {
-    ##for (i in 1:1) {
+        ##for (i in 1:1) {
         if (!is.na(dataloc$nanopore.raw[i])) {
             ##Index canu with bowtie2            
             system(paste0("bowtie2-build ", dataloc$pilon.cor[i], " ", dataloc$pilon.btidx[i]))
             
         }
     }   
-
+    
     
     
     ##align illumina to nanopore contigs
@@ -48,7 +50,7 @@ for (round in 1:10){
         mutate(pilon.ill.align=ifelse(is.na(nanopore.raw), "NA", file.path(workdir, "btbam", paste0(trish.id, ".", round, ".sorted.bam"))))
     
     for (i in 1:dim(dataloc)[1]) {
-    ##for (i in 1:1) {
+        ##for (i in 1:1) {
         if (!is.na(dataloc$nanopore.raw[i])) {
             ##Align ill to canu bowtie2
             system(paste0("bowtie2 -p 15 -x ", dataloc$pilon.btidx[i], " -1 ", dataloc$illumina.r1[i], " -2 ",
