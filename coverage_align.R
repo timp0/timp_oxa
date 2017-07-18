@@ -13,7 +13,6 @@ setwd(workdir)
 
 dir.create(file.path(workdir, "assembly.coverage"))
 dir.create(file.path(workdir, "reference.coverage"))
-
 dataloc=dataloc %>%
     mutate(final.idxfa=ifelse(is.na(pilon.cor), "NA", file.path(workdir, "assembly.coverage", paste0(trish.id, ".loop.fa")))) %>%
     mutate(final.btidx=ifelse(is.na(pilon.cor), "NA", file.path(workdir, "assembly.coverage", paste0(trish.id, ".loop")))) %>%

@@ -16,7 +16,6 @@ do
     lastal -P 8 /mithril/Data/NGS/Reference/kpneumo/kpneumo ${qseq} >wga_last/${i}.canu.maf
     last-dotplot wga_last/${i}.canu.maf wga_last/${i}.canu.pdf
     last-dotplot wga_last/${i}.canu.maf wga_last/${i}.canu.png
-
     
 done
 
