@@ -29,14 +29,16 @@ make.tree = function(dataloc, workdir, outdir, label="nanocontigs", assembly="na
     if (full.tree) {
         file.copy(kpneumo.refs$dest.name, file.path(contig.dir, kpneumo.refs$local.name))
         system(paste0("gunzip -f ", file.path(contig.dir, "*.gz")))
+        kpneumo.refs$local.name=gsub(".gz", "", kpneumo.refs$local.name)
     } else {
         ##Just HS11286 for now
         file.copy(kpneumo.refs$dest.name[kpneumo.refs$coreref], file.path(contig.dir, kpneumo.refs$local.name[kpneumo.refs$coreref]))
         ##Got to ungzip these for parsnp (obnoxiously)
         system(paste0("gunzip -f ", file.path(contig.dir, "*.gz")))
+        kpneumo.refs$local.name=gsub(".gz", "", kpneumo.refs$local.name)
     }
     ##parsnp
-    system(paste0("~/Code/Harvest-Linux64-v1.1.2/parsnp -r ", file.path(contig.dir, kpneumo.refs$local.name[kpneumo.refs$coreref]),
+    system(paste0("~/Code/Harvest-Linux64-v1.1.2/parsnp -c -r ", file.path(contig.dir, kpneumo.refs$local.name[kpneumo.refs$coreref]),
                   " -d ", contig.dir, " -p 10 -o ./", parsnp.label))
     
     ##Count snps
@@ -140,9 +142,11 @@ pilonloopvcf=read_tsv(file.path(outdir, "pilon_loop_parsnp", "parsnp.vcf"), comm
     rename(chr=`#CHROM`)
 
 ##Tree branches are 1,2,6,7 and 9,8,4,12
-HMV=paste0("isolate_", c(9,8,4,12), ".fasta")
-XDR=paste0("isolate_", c(1,2,6,7), ".fasta")
+XDR=paste0("isolate_", c(9,8,4,10,12), ".fasta")
+HMV=paste0("isolate_", c(1,2,6,7), ".fasta")
 
+
+##Do these - make sense given the number of isolates?
 HMV.snp=pilonloopvcf %>%
     select(1:9,one_of(HMV)) %>%
     mutate(diffy=rowSums(cbind((.[10]-.[11])!=0, (.[10]-.[12])!=0, (.[10]-.[13])!=0))) %>%
@@ -150,7 +154,7 @@ HMV.snp=pilonloopvcf %>%
 
 XDR.snp=pilonloopvcf %>%
     select(1:9,one_of(XDR)) %>%
-    mutate(diffy=rowSums(cbind((.[10]-.[11])!=0, (.[10]-.[12])!=0, (.[10]-.[13])!=0))) %>%
+    mutate(diffy=rowSums(cbind((.[10]-.[11])!=0, (.[10]-.[12])!=0, (.[10]-.[13])!=0, (.[10]-.[14])!=0))) %>%
     filter(diffy>0)
 
 
@@ -172,17 +176,17 @@ make.tree(dataloc, workdir, outdir, label="spadescontigs", assembly="illumina.sp
 kpneumo.comp=filter(kpneumo.refs, Level=="Complete Genome")
 
 HMV.ref=tibble(dest.name=dataloc$pilon.cor[dataloc$trish.id==4],
-               local.name="isolate_4.fasta",
-               coreref=T)
-
-XDR.ref=tibble(dest.name=dataloc$pilon.cor[dataloc$trish.id==1],
                local.name="isolate_1.fasta",
                coreref=T)
 
-make.tree(dataloc[dataloc$trish.id %in% c(9,8,4,12),], workdir, outdir, label="HMVparsnp", assembly="pilon.cor", HMV.ref,
-          parsnp.label="HMVparsnp", full.tree=F)
+XDR.ref=tibble(dest.name=dataloc$pilon.cor[dataloc$trish.id==1],
+               local.name="isolate_4.fasta",
+               coreref=T)
 
-make.tree(dataloc[dataloc$trish.id %in% c(1,2,6,7),], workdir, outdir, label="XDRparsnp", assembly="pilon.cor", XDR.ref,
+make.tree(dataloc[dataloc$trish.id %in% c(9,8,4,10,12),], workdir, outdir, label="XDRparsnp", assembly="pilon.cor", XDR.ref,
           parsnp.label="XDRparsnp", full.tree=F)
+
+make.tree(dataloc[dataloc$trish.id %in% c(1,2,6,7),], workdir, outdir, label="HMVparsnp", assembly="pilon.cor", HMV.ref,
+          parsnp.label="HMVparsnp", full.tree=F)
 
 
