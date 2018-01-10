@@ -4,6 +4,8 @@ library(googlesheets)
 workdir="/atium/Data/Nanopore/Analysis/170516_oxapilon/annot/"
 outdir="~/Dropbox/Data/Nanopore/170515_oxa/"
 
+
+##Spreadsheet with sample information, could also be used from a csv
 gs_auth(token = "~/googlesheets_token.rds")
 
 fullsheet=gs_url("https://docs.google.com/spreadsheets/d/1_WT3RQSVGvR97-asIHtIy0WWg49rAFiWWQe9g8BWNiQ/edit?usp=sharing")

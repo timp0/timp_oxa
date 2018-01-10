@@ -2,7 +2,7 @@ library(tidyverse)
 
 ##Run canu
 if (TRUE) {
-
+    ##Init table of samples in custom EC2 locations
     dataloc=tibble(trish.id=c(1,2,4,6,7,8,9,10,12), nanopore.fasta=file.path("nanopore.raw", paste0(c(1,2,4,6,7,8,9,10,12), ".nanopore.2D.fasta")))
     
     dataloc=dataloc %>%
