@@ -101,13 +101,12 @@ if (FALSE) {
         ##Get all refs
         download.file(kpneumo.refs$source.name[i], destfile=kpneumo.refs$dest.name[i])
     }
-    
 }
 
 setwd(workdir)
 
-fullsheet=gs_url("https://docs.google.com/spreadsheets/d/1_WT3RQSVGvR97-asIHtIy0WWg49rAFiWWQe9g8BWNiQ/edit?usp=sharing")
-dataloc=gs_read(fullsheet, ws="KPneumo0518")
+fullsheet=gs_url("https://docs.google.com/spreadsheets/d/10lS7CqnZCWhpsMgaUsZRaWDFgnI_LU8PrnsYRtlgikY/edit#gid=807620332")
+dataloc=gs_read(fullsheet, ws="KPneumo180212")
 
 
 ##Raw nanopore assembly tree
@@ -188,5 +187,37 @@ make.tree(dataloc[dataloc$trish.id %in% c(9,8,4,10,12),], workdir, outdir, label
 
 make.tree(dataloc[dataloc$trish.id %in% c(1,2,6,7),], workdir, outdir, label="HMVparsnp", assembly="pilon.cor", HMV.ref,
           parsnp.label="HMVparsnp", full.tree=F)
+
+
+##run map_snps.R to generate consensus from mapped
+
+##From big tree code - closest refs are:
+##dataloc$close.ref=NA
+##dataloc$close.ref[dataloc$trish.id %in% c(1, 2, 7, 6)]="ED23"
+##dataloc$close.ref[dataloc$trish.id %in% c(4,8,9,10,12)]="MS6671"
+
+
+ED23.ref=kpneumo.refs %>%
+    filter(Strain=="ED23") %>%
+    mutate(coreref=T)
+
+MS6671.ref=kpneumo.refs %>%
+    filter(Strain=="MS6671") %>%
+    mutate(coreref=T)
+
+
+##final.ill.cons doesn't have fasta extension - fix
+
+dataloc=dataloc %>%
+    mutate(final.ill.cons=paste0(final.ill.cons, ".fa")) %>%
+    mutate(final.nano.cons=paste0(final.nano.cons, ".fa"))
+               
+
+make.tree(dataloc[dataloc$trish.id %in% c(9,8,4,10,12),], workdir, outdir, label="cons.XDR.parsnp", assembly="final.ill.cons", MS6671.ref,
+          parsnp.label="cons.XDR.parsnp", full.tree=F)
+
+
+make.tree(dataloc[dataloc$trish.id %in% c(1,2,6,7),], workdir, outdir, label="cons.HMV.parsnp", assembly="final.ill.cons", ED23.ref,
+          parsnp.label="cons.HMV.parsnp", full.tree=F)
 
 
