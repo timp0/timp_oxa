@@ -182,11 +182,22 @@ XDR.ref=tibble(dest.name=dataloc$pilon.cor[dataloc$trish.id==1],
                local.name="isolate_4.fasta",
                coreref=T)
 
-make.tree(dataloc[dataloc$trish.id %in% c(9,8,4,10,12),], workdir, outdir, label="XDRparsnp", assembly="pilon.cor", XDR.ref,
-          parsnp.label="XDRparsnp", full.tree=F)
 
-make.tree(dataloc[dataloc$trish.id %in% c(1,2,6,7),], workdir, outdir, label="HMVparsnp", assembly="pilon.cor", HMV.ref,
-          parsnp.label="HMVparsnp", full.tree=F)
+##pilon just isolates
+make.tree(dataloc[dataloc$trish.id %in% c(9,8,4,10,12),], workdir, outdir, label="XDRisolates.pilon.parsnp", assembly="pilon.cor", XDR.ref,
+          parsnp.label="XDRisolates.pilon.parsnp", full.tree=F)
+
+make.tree(dataloc[dataloc$trish.id %in% c(1,2,6,7),], workdir, outdir, label="HMVisolates.pilon.parsnp", assembly="pilon.cor", HMV.ref,
+          parsnp.label="HMVisolates.pilon.parsnp", full.tree=F)
+
+##spades just isolates
+make.tree(dataloc[dataloc$trish.id %in% c(9,8,4,10,12),], workdir, outdir, label="XDRisolates.spades.parsnp", assembly="illumina.spades", XDR.ref,
+          parsnp.label="XDRisolates.spades.parsnp", full.tree=F)
+
+make.tree(dataloc[dataloc$trish.id %in% c(1,2,6,7),], workdir, outdir, label="HMVisolates.spades.parsnp", assembly="illumina.spades", HMV.ref,
+          parsnp.label="HMVisolates.spades.parsnp", full.tree=F)
+
+
 
 
 ##run map_snps.R to generate consensus from mapped
@@ -216,8 +227,30 @@ dataloc=dataloc %>%
 make.tree(dataloc[dataloc$trish.id %in% c(9,8,4,10,12),], workdir, outdir, label="cons.XDR.parsnp", assembly="final.ill.cons", MS6671.ref,
           parsnp.label="cons.XDR.parsnp", full.tree=F)
 
-
 make.tree(dataloc[dataloc$trish.id %in% c(1,2,6,7),], workdir, outdir, label="cons.HMV.parsnp", assembly="final.ill.cons", ED23.ref,
           parsnp.label="cons.HMV.parsnp", full.tree=F)
+
+make.tree(dataloc[dataloc$trish.id %in% c(9,8,4,10,12),], workdir, outdir, label="nanocons.XDR.parsnp", assembly="final.nano.cons", MS6671.ref,
+          parsnp.label="nanocons.XDR.parsnp", full.tree=F)
+
+make.tree(dataloc[dataloc$trish.id %in% c(1,2,6,7),], workdir, outdir, label="nanocons.HMV.parsnp", assembly="final.nano.cons", ED23.ref,
+          parsnp.label="nanocons.HMV.parsnp", full.tree=F)
+
+
+
+make.tree(dataloc[dataloc$trish.id %in% c(9,8,4,10,12),], workdir, outdir, label="spades.XDR.parsnp", assembly="illumina.spades", MS6671.ref,
+          parsnp.label="spades.XDR.parsnp", full.tree=F)
+
+make.tree(dataloc[dataloc$trish.id %in% c(1,2,6,7),], workdir, outdir, label="spades.HMV.parsnp", assembly="illumina.spades", ED23.ref,
+          parsnp.label="spades.HMV.parsnp", full.tree=F)
+
+
+make.tree(dataloc[dataloc$trish.id %in% c(9,8,4,10,12),], workdir, outdir, label="pilon.XDR.parsnp", assembly="pilon.cor", MS6671.ref,
+          parsnp.label="pilon.XDR.parsnp", full.tree=F)
+
+make.tree(dataloc[dataloc$trish.id %in% c(1,2,6,7),], workdir, outdir, label="pilon.HMV.parsnp", assembly="pilon.cor", ED23.ref,
+          parsnp.label="pilon.HMV.parsnp", full.tree=F)
+
+
 
 
