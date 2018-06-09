@@ -65,13 +65,3 @@ if (TRUE) {
 }
 
 
-##Load coverage
-if (TRUE) {
-    for (i in 1:dim(dataloc)[1]) {
-        if (!is.na(dataloc$final.idxfa[i])) {
-            
-
-        }
-    }
-}
-
