@@ -106,7 +106,6 @@ if (FALSE) {
 
 ##canu
 ##set canu directories
-
 ##2nd canu run is 
 
     
